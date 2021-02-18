@@ -1,0 +1,41 @@
+import numpy as np
+from torchvision.datasets import MNIST, SVHN
+from torchvision import transforms
+import torch
+from torch.utils.data import DataLoader
+
+
+def normalize(data_tensor):
+    '''re-scale image values to [-1, 1]'''
+    return (data_tensor / 255.) * 2. - 1. 
+
+def tile_image(image):
+    '''duplicate along channel axis'''
+    return image.repeat(3,1,1)
+
+transform_list = [transforms.ToTensor(), transforms.Lambda(lambda x: normalize(x))]
+
+batch_size = 5
+
+mnist_dataset = MNIST(root="<root_path>", train=False, 
+    transform=transforms.Compose(transform_list+[
+        transforms.ToPILImage(), 
+        transforms.Resize(32), # resize to [32,32]
+        transforms.ToTensor(),
+        transforms.Lambda(lambda x: tile_image(x))
+        ]))
+# raw mnist images: [num, 28, 28] range (0, 255)
+svhn_dataset = SVHN(root="<root_path>", split='test', 
+    transform=transforms.Compose(transform_list)) # [num, 3, 32, 32] range (0, 255)
+
+# iterate with data loader
+svhn_loader = DataLoader(dataset=svhn_dataset, batch_size=batch_size, shuffle=True, drop_last=True, num_workers=0)
+
+for batch_idx, (data, target) in enumerate(svhn_loader):
+    print(data.size(), target)
+    break
+
+mnist_loader = DataLoader(dataset=mnist_dataset, batch_size=batch_size, shuffle=True, drop_last=True, num_workers=0)
+for batch_idx, (data, target) in enumerate(mnist_loader):
+    print(data.size(), target)
+    break
